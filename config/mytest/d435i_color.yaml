@@ -1,0 +1,17 @@
+%YAML:1.0
+---
+#camera calibration #use d435i
+model_type: PINHOLE
+camera_name: camera
+image_width: 640
+image_height: 480
+distortion_parameters:
+  k1: 9.2615504465028850e-02
+  k2: -1.8082438825995681e-01
+  p1: -6.5484100374765971e-04
+  p2: -3.5829351558557421e-04
+projection_parameters:
+  fx: 612.0813598632812
+  fy: 610.395263671875
+  cx: 328.0500793457031
+  cy: 254.96112060546875

@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find vins)/launch/vins_rviz.launch" />
+    <node pkg="global_fusion" type="global_fusion_node" name="global_estimator" output="screen" />
+    <node pkg="vins" type="kitti_gps_test" name="vins_estimator" output="screen" args="/media/yxt/storage/SLAM_demo/VINS_FUSION_ws/src/VINS-Fusion/config/kitti_raw/kitti_10_03_config.yaml /media/yxt/storage/2011_10_03_drive_0042_sync "/>
+    
+</launch>

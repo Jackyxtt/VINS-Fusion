@@ -1,0 +1,2 @@
+roslaunch vins vins_rviz.launch
+rosrun vins kitti_odom_test /media/yxt/storage/SLAM_demo/VINS_FUSION_ws/src/VINS-Fusion/config/kitti_odom/kitti_config00-02.yaml /media/yxt/storage/2011_09_30_drive_0016_sync
