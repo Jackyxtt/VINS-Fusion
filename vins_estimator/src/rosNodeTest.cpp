@@ -25,19 +25,21 @@ Estimator estimator;
 
 queue<sensor_msgs::ImuConstPtr> imu_buf;
 queue<sensor_msgs::PointCloudConstPtr> feature_buf;
-queue<sensor_msgs::ImageConstPtr> img0_buf;
-queue<sensor_msgs::ImageConstPtr> img1_buf;
+// queue<sensor_msgs::ImageConstPtr> img0_buf;
+queue<sensor_msgs::CompressedImageConstPtr> img0_buf; //压缩图像
+// queue<sensor_msgs::ImageConstPtr> img1_buf;
+queue<sensor_msgs::CompressedImageConstPtr> img1_buf; //压缩图像
 std::mutex m_buf;
 
 
-void img0_callback(const sensor_msgs::ImageConstPtr &img_msg)
+void img0_callback(const sensor_msgs::CompressedImageConstPtr &img_msg)
 {
     m_buf.lock();
     img0_buf.push(img_msg);
     m_buf.unlock();
 }
 
-void img1_callback(const sensor_msgs::ImageConstPtr &img_msg)
+void img1_callback(const sensor_msgs::CompressedImageConstPtr &img_msg)
 {
     m_buf.lock();
     img1_buf.push(img_msg);
@@ -45,24 +47,10 @@ void img1_callback(const sensor_msgs::ImageConstPtr &img_msg)
 }
 
 
-cv::Mat getImageFromMsg(const sensor_msgs::ImageConstPtr &img_msg)
+cv::Mat getImageFromMsg(const sensor_msgs::CompressedImageConstPtr &img_msg)
 {
     cv_bridge::CvImageConstPtr ptr;
-    if (img_msg->encoding == "8UC1")
-    {
-        sensor_msgs::Image img;
-        img.header = img_msg->header;
-        img.height = img_msg->height;
-        img.width = img_msg->width;
-        img.is_bigendian = img_msg->is_bigendian;
-        img.step = img_msg->step;
-        img.data = img_msg->data;
-        img.encoding = "mono8";
-        ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
-    }
-    else
-        ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
-
+    ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::BGR8);
     cv::Mat img = ptr->image.clone();
     return img;
 }
@@ -225,7 +213,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "vins_estimator");
     ros::NodeHandle n("~");
-    ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
+    ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug);
 
     if(argc != 2)
     {
@@ -249,18 +237,10 @@ int main(int argc, char **argv)
 
     registerPub(n);
 
-    ros::Subscriber sub_imu;
-    if(USE_IMU)
-    {
-        sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
-    }
+    ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber sub_feature = n.subscribe("/feature_tracker/feature", 2000, feature_callback);
     ros::Subscriber sub_img0 = n.subscribe(IMAGE0_TOPIC, 100, img0_callback);
-    ros::Subscriber sub_img1;
-    if(STEREO)
-    {
-        sub_img1 = n.subscribe(IMAGE1_TOPIC, 100, img1_callback);
-    }
+    ros::Subscriber sub_img1 = n.subscribe(IMAGE1_TOPIC, 100, img1_callback);
     ros::Subscriber sub_restart = n.subscribe("/vins_restart", 100, restart_callback);
     ros::Subscriber sub_imu_switch = n.subscribe("/vins_imu_switch", 100, imu_switch_callback);
     ros::Subscriber sub_cam_switch = n.subscribe("/vins_cam_switch", 100, cam_switch_callback);
