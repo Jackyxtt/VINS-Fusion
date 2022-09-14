@@ -95,10 +95,23 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
 {
     TicToc t_r;
     cur_time = _cur_time;
-    cur_img = _img;
+    cv::Mat img0, img1;
+    img0 = _img;
+    img1 = _img1;
+
+    if(img0.channels()==3)
+    {
+        cvtColor(img0,img0,CV_BGR2GRAY);
+    }
+    else if(img0.channels()==4)
+    {
+        cvtColor(img0,img0,CV_BGRA2GRAY);
+    }
+
+    cur_img = img0;
     row = cur_img.rows;
     col = cur_img.cols;
-    cv::Mat rightImg = _img1;
+    cv::Mat rightImg = img1;
     /*
     {
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
