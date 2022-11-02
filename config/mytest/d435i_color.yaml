@@ -1,8 +1,8 @@
 %YAML:1.0
 ---
-#camera calibration #use d435i
+#camera_models calibration #use d435i
 model_type: PINHOLE
-camera_name: camera
+camera_name: camera_models
 image_width: 640
 image_height: 480
 distortion_parameters:

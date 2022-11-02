@@ -17,7 +17,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
-#include "estimator/estimator.h"
+#include "../include/estimator.h"
 #include "utility/visualization.h"
 
 using namespace std;

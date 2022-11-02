@@ -1,7 +1,7 @@
 %YAML:1.0
 ---
 model_type: PINHOLE
-camera_name: camera
+camera_name: camera_models
 image_width: 1226
 image_height: 370
 distortion_parameters:

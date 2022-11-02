@@ -105,7 +105,7 @@ void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     m_buf.unlock();
     //printf(" image time %f \n", image_msg->header.stamp.toSec());
 
-    // detect unstable camera stream
+    // detect unstable camera_models stream
     if (last_image_time == -1)
         last_image_time = image_msg->header.stamp.toSec();
     else if (image_msg->header.stamp.toSec() - last_image_time > 1.0 || image_msg->header.stamp.toSec() < last_image_time)

@@ -13,7 +13,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include "../utility/utility.h"
-#include "../estimator/parameters.h"
+#include "../../include/parameters.h"
 #include "integration_base.h"
 
 #include <ceres/ceres.h>

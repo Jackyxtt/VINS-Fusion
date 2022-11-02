@@ -17,8 +17,8 @@
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
-#include "estimator/estimator.h"
-#include "estimator/parameters.h"
+#include "../include/estimator.h"
+#include "../include/parameters.h"
 #include "utility/visualization.h"
 
 Estimator estimator;
@@ -203,7 +203,7 @@ void cam_switch_callback(const std_msgs::BoolConstPtr &switch_msg)
     }
     else
     {
-        //ROS_WARN("use mono camera (left)!");
+        //ROS_WARN("use mono camera_models (left)!");
         estimator.changeSensorType(USE_IMU, 0);
     }
     return;

@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  *******************************************************/
 
-#include "parameters.h"
+#include "../../include/parameters.h"
 
 double INIT_DEPTH;
 double MIN_PARALLAX;
@@ -140,7 +140,7 @@ void readParameters(std::string config_file)
     } 
     
     NUM_OF_CAM = fsSettings["num_of_cam"];
-    printf("camera number %d\n", NUM_OF_CAM);
+    printf("camera_models number %d\n", NUM_OF_CAM);
 
     if(NUM_OF_CAM != 1 && NUM_OF_CAM != 2)
     {

@@ -16,7 +16,7 @@
 #include <Eigen/Dense>
 #include "../utility/utility.h"
 #include "../utility/tic_toc.h"
-#include "../estimator/parameters.h"
+#include "../../include/parameters.h"
 
 class InitialPoseFactor : public ceres::SizedCostFunction<6, 7>
 {

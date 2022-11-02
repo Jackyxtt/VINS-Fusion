@@ -90,7 +90,7 @@ void printStatistics(const Estimator &estimator, double t)
         cv::FileStorage fs(EX_CALIB_RESULT_PATH, cv::FileStorage::WRITE);
         for (int i = 0; i < NUM_OF_CAM; i++)
         {
-            //ROS_DEBUG("calibration result for camera %d", i);
+            //ROS_DEBUG("calibration result for camera_models %d", i);
             ROS_DEBUG_STREAM("extirnsic tic: " << estimator.tic[i].transpose());
             ROS_DEBUG_STREAM("extrinsic ric: " << Utility::R2ypr(estimator.ric[i]).transpose());
 
@@ -321,7 +321,7 @@ void pubTF(const Estimator &estimator, const std_msgs::Header &header)
     transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(transform, header.stamp, "world", "body"));
 
-    // camera frame
+    // camera_models frame
     transform.setOrigin(tf::Vector3(estimator.tic[0].x(),
                                     estimator.tic[0].y(),
                                     estimator.tic[0].z()));
@@ -330,7 +330,7 @@ void pubTF(const Estimator &estimator, const std_msgs::Header &header)
     q.setY(Quaterniond(estimator.ric[0]).y());
     q.setZ(Quaterniond(estimator.ric[0]).z());
     transform.setRotation(q);
-    br.sendTransform(tf::StampedTransform(transform, header.stamp, "body", "camera"));
+    br.sendTransform(tf::StampedTransform(transform, header.stamp, "body", "camera_models"));
 
     
     nav_msgs::Odometry odometry;
@@ -350,7 +350,7 @@ void pubTF(const Estimator &estimator, const std_msgs::Header &header)
 
 void pubKeyframe(const Estimator &estimator)
 {
-    // pub camera pose, 2D-3D points of keyframe
+    // pub camera_models pose, 2D-3D points of keyframe
     if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR && estimator.marginalization_flag == 0)
     {
         int i = WINDOW_SIZE - 2;

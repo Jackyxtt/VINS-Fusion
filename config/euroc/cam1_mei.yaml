@@ -1,7 +1,7 @@
 %YAML:1.0
 ---
 model_type: MEI
-camera_name: camera
+camera_name: camera_models
 image_width: 752
 image_height: 480
 mirror_parameters:

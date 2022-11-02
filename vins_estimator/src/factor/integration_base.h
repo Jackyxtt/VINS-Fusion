@@ -10,7 +10,7 @@
 #pragma once
 
 #include "../utility/utility.h"
-#include "../estimator/parameters.h"
+#include "../../include/parameters.h"
 
 #include <ceres/ceres.h>
 using namespace Eigen;
