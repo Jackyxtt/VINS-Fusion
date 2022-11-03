@@ -39,12 +39,15 @@ public:
     FeatureTracker();
     map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> trackImage(double _cur_time, const cv::Mat &_img, const cv::Mat &_img1 = cv::Mat());
     void setMask();
+    // TODO：支持双目相机,会读取多个相机的参数
     void readIntrinsicParameter(const vector<string> &calib_file);
     void showUndistortion(const string &name);
     void rejectWithF();
     void undistortedPoints();
+    // TODO:只对特征点进行了去畸变，不像vins_course中还计算了二维特征点的运动速度
     vector<cv::Point2f> undistortedPts(vector<cv::Point2f> &pts, camodocal::CameraPtr cam);
-    vector<cv::Point2f> ptsVelocity(vector<int> &ids, vector<cv::Point2f> &pts, 
+    // TODO:计算二维特征点的速度
+    vector<cv::Point2f> ptsVelocity(vector<int> &ids, vector<cv::Point2f> &pts,
                                     map<int, cv::Point2f> &cur_id_pts, map<int, cv::Point2f> &prev_id_pts);
     void showTwoImage(const cv::Mat &img1, const cv::Mat &img2, 
                       vector<cv::Point2f> pts1, vector<cv::Point2f> pts2);
@@ -58,6 +61,14 @@ public:
     void removeOutliers(set<int> &removePtsIds);
     cv::Mat getTrackImage();
     bool inBorder(const cv::Point2f &pt);
+
+    //void readImage(const cv::Mat &_img,double _cur_time);
+
+    // void addPoints();
+
+    // bool updateID(unsigned int i);
+
+    // void undistortedSimdataPoints();
 
     int row, col;
     cv::Mat imTrack;

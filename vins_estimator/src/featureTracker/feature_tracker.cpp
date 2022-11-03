@@ -170,7 +170,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         reduceVector(cur_pts, status);
         reduceVector(ids, status);
         reduceVector(track_cnt, status);
-        ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
+        printf("temporal optical flow costs: %fms", t_o.toc());
         //printf("track cnt %d\n", (int)ids.size());
     }
 
@@ -180,12 +180,12 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
     if (1)
     {
         //rejectWithF();
-        ROS_DEBUG("set mask begins");
+        printf("set mask begins");
         TicToc t_m;
         setMask();
-        ROS_DEBUG("set mask costs %fms", t_m.toc());
+        printf("set mask costs %fms", t_m.toc());
 
-        ROS_DEBUG("detect feature begins");
+        printf("detect feature begins");
         TicToc t_t;
         int n_max_cnt = MAX_CNT - static_cast<int>(cur_pts.size());
         if (n_max_cnt > 0)
@@ -198,7 +198,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         }
         else
             n_pts.clear();
-        ROS_DEBUG("detect feature costs: %f ms", t_t.toc());
+        printf("detect feature costs: %f ms", t_t.toc());
 
         for (auto &p : n_pts)
         {
@@ -269,7 +269,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
     prevLeftPtsMap.clear();
     for(size_t i = 0; i < cur_pts.size(); i++)
         prevLeftPtsMap[ids[i]] = cur_pts[i];
-
+    // 先把左目的特征点加入featureFrame中
     map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> featureFrame;
     for (size_t i = 0; i < ids.size(); i++)
     {
@@ -290,7 +290,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         xyz_uv_velocity << x, y, z, p_u, p_v, velocity_x, velocity_y;
         featureFrame[feature_id].emplace_back(camera_id,  xyz_uv_velocity);
     }
-
+    // 再把右目特征点加入featureFrame中
     if (!_img1.empty() && stereo_cam)
     {
         for (size_t i = 0; i < ids_right.size(); i++)
@@ -322,7 +322,7 @@ void FeatureTracker::rejectWithF()
 {
     if (cur_pts.size() >= 8)
     {
-        ROS_DEBUG("FM ransac begins");
+        printf("FM ransac begins");
         TicToc t_f;
         vector<cv::Point2f> un_cur_pts(cur_pts.size()), un_prev_pts(prev_pts.size());
         for (unsigned int i = 0; i < cur_pts.size(); i++)
@@ -347,8 +347,8 @@ void FeatureTracker::rejectWithF()
         reduceVector(cur_un_pts, status);
         reduceVector(ids, status);
         reduceVector(track_cnt, status);
-        ROS_DEBUG("FM ransac: %d -> %lu: %f", size_a, cur_pts.size(), 1.0 * cur_pts.size() / size_a);
-        ROS_DEBUG("FM ransac costs: %fms", t_f.toc());
+        printf("FM ransac: %d -> %lu: %f", size_a, cur_pts.size(), 1.0 * cur_pts.size() / size_a);
+        printf("FM ransac costs: %fms", t_f.toc());
     }
 }
 
@@ -356,7 +356,7 @@ void FeatureTracker::readIntrinsicParameter(const vector<string> &calib_file)
 {
     for (size_t i = 0; i < calib_file.size(); i++)
     {
-        ROS_INFO("reading paramerter of camera_models %s", calib_file[i].c_str());
+        printf("reading paramerter of camera_models %s", calib_file[i].c_str());
         camodocal::CameraPtr camera = CameraFactory::instance()->generateCameraFromYamlFile(calib_file[i]);
         m_camera.push_back(camera);
     }
@@ -557,3 +557,163 @@ cv::Mat FeatureTracker::getTrackImage()
 {
     return imTrack;
 }
+
+// bool FeatureTracker::updateID(unsigned int i)
+// {
+//     if (i < ids.size())
+//     {
+//         if (ids[i] == -1)
+//             ids[i] = n_id++;
+//         //为各点建立id号（n_id是一直递增的），新点的id号在创建时为-1，每一帧trackdata完成后都要进行更新，从而给新点更大的id号
+//         return true;
+//     }
+//     else
+//         return false;
+// }
+
+// void FeatureTracker::addPoints()
+// {
+//     for (auto &p : n_pts)
+//     {
+//         forw_pts.push_back(p);
+//         ids.push_back(-1);
+//         track_cnt.push_back(1);
+//     }
+// }
+
+// void FeatureTracker::undistortedSimdataPoints(){
+//     cur_un_pts.clear();
+//     cur_un_pts_map.clear();
+//     //cv::undistortPoints(cur_pts, un_pts, K, cv::Mat());
+//     for (unsigned int i = 0; i < cur_pts.size(); i++)
+//     {
+// //        Eigen::Vector2d a(cur_pts[i].x, cur_pts[i].y);
+//         cur_un_pts.push_back(cv::Point2f(cur_pts[i].x, cur_pts[i].y));
+//         cur_un_pts_map.insert(make_pair(ids[i], cv::Point2f(cur_pts[i].x, cur_pts[i].y)));
+//         //printf("cur pts id %d %f %f", ids[i], cur_un_pts[i].x, cur_un_pts[i].y);
+//     }
+//     // caculate points velocity
+//     if (!prev_un_pts_map.empty())
+//     {
+//         double dt = cur_time - prev_time;
+//         pts_velocity.clear();
+//         for (unsigned int i = 0; i < cur_un_pts.size(); i++)
+//         {
+//             if (ids[i] != -1)
+//             {
+//                 std::map<int, cv::Point2f>::iterator it;
+//                 it = prev_un_pts_map.find(ids[i]);
+//                 if (it != prev_un_pts_map.end())
+//                 {
+//                     double v_x = (cur_un_pts[i].x - it->second.x) / dt;
+//                     double v_y = (cur_un_pts[i].y - it->second.y) / dt;
+//                     pts_velocity.push_back(cv::Point2f(v_x, v_y));
+//                 }
+//                 else
+//                     pts_velocity.push_back(cv::Point2f(0, 0));
+//             }
+//             else
+//             {
+//                 pts_velocity.push_back(cv::Point2f(0, 0));
+//             }
+//         }
+//     }
+//     else
+//     {
+//         for (unsigned int i = 0; i < cur_pts.size(); i++)
+//         {
+//             pts_velocity.push_back(cv::Point2f(0, 0));
+//         }
+//     }
+//     prev_un_pts_map = cur_un_pts_map;
+// }
+
+// void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
+// {
+//     cv::Mat img;
+//     TicToc t_r;
+//     cur_time = _cur_time;
+//     //图像亮度进行调整
+//     if (EQUALIZE)
+//     {
+//         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+//         TicToc t_c;
+//         clahe->apply(_img, img);
+//         //printf("CLAHE costs: %fms", t_c.toc());
+//     }
+//     else
+//         img = _img;
+
+//     if (forw_img.empty())
+//     {
+//         prev_img = cur_img = forw_img = img;
+//     }
+//     else
+//     {
+//         forw_img = img;//当前输入的图像
+//     }
+
+//     forw_pts.clear();
+
+//     if (cur_pts.size() > 0)
+//     {
+//         TicToc t_o;
+//         vector<uchar> status;
+//         vector<float> err;
+//         cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
+
+//         for (int i = 0; i < int(forw_pts.size()); i++)
+//             if (status[i] && !inBorder(forw_pts[i]))
+//                 status[i] = 0;
+//         reduceVector(prev_pts, status);//reduceVector：删除掉没有跟踪到的旧路标点
+//         reduceVector(cur_pts, status);
+//         reduceVector(forw_pts, status);
+//         reduceVector(ids, status);
+//         reduceVector(cur_un_pts, status);//un下标代表经过去畸变的点
+//         reduceVector(track_cnt, status);//track_cnt表示当前点被追踪到的次数
+//         //由于检测新的特征点在reduceVector()后面进行，因此对prev_pts和cur_pts进行保留时能保证保留的是匹配点。
+
+//         //printf("temporal optical flow costs: %fms", t_o.toc());
+//     }
+
+//     for (auto &n : track_cnt)
+//         n++;
+
+//     if (PUB_THIS_FRAME)
+//     {
+//         rejectWithF();//第一帧不执行，此时forw_pts为空
+//         //printf("set mask begins");
+//         TicToc t_m;
+//         setMask();
+//         //printf("set mask costs %fms", t_m.toc());
+
+//         //printf("detect feature begins");
+//         TicToc t_t;
+//         int n_max_cnt = MAX_CNT - static_cast<int>(forw_pts.size());
+//         if (n_max_cnt > 0)
+//         {
+//             if(mask.empty())
+//                 cout << "mask is empty " << endl;
+//             if (mask.type() != CV_8UC1)
+//                 cout << "mask type wrong " << endl;
+//             if (mask.size() != forw_img.size())
+//                 cout << "wrong size " << endl;
+//             cv::goodFeaturesToTrack(forw_img, n_pts, MAX_CNT - forw_pts.size(), 0.01, MIN_DIST, mask);
+//         }//提取当前输入的图像forw_img中的新特征点（不包括之前跟踪到的），放进n_pts中
+//         else
+//             n_pts.clear();
+//         //printf("detect feature costs: %fms", t_t.toc());
+
+//         //printf("add feature begins");
+//         TicToc t_a;
+//         addPoints();//加入新点，之前跟踪到的点不算新点
+//         //printf("selectFeature costs: %fms", t_a.toc());
+//     }
+//     prev_img = cur_img;
+//     prev_pts = cur_pts;
+//     prev_un_pts = cur_un_pts;
+//     cur_img = forw_img;//当前输入图像新创建点时赋值给forw_img，现在赋值给cur_img
+//     cur_pts = forw_pts;
+//     undistortedPoints();
+//     prev_time = cur_time;
+// }

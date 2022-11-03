@@ -80,7 +80,7 @@ void new_sequence()
     printf("sequence cnt %d \n", sequence);
     if (sequence > 5)
     {
-        ROS_WARN("only support 5 sequences since it's boring to copy code for more sequences.");
+        printf("only support 5 sequences since it's boring to copy code for more sequences.");
         ROS_BREAK();
     }
     posegraph.posegraph_visualization->reset();
@@ -99,7 +99,7 @@ void new_sequence()
 
 void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 {
-    //ROS_INFO("image_callback!");
+    //printf("image_callback!");
     m_buf.lock();
     image_buf.push(image_msg);
     m_buf.unlock();
@@ -110,7 +110,7 @@ void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         last_image_time = image_msg->header.stamp.toSec();
     else if (image_msg->header.stamp.toSec() - last_image_time > 1.0 || image_msg->header.stamp.toSec() < last_image_time)
     {
-        ROS_WARN("image discontinue! detect a new sequence!");
+        printf("image discontinue! detect a new sequence!");
         new_sequence();
     }
     last_image_time = image_msg->header.stamp.toSec();
@@ -118,7 +118,7 @@ void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
 void point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
 {
-    //ROS_INFO("point_callback!");
+    //printf("point_callback!");
     m_buf.lock();
     point_buf.push(point_msg);
     m_buf.unlock();
@@ -174,7 +174,7 @@ void margin_point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
 
 void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
-    //ROS_INFO("pose_callback!");
+    //printf("pose_callback!");
     m_buf.lock();
     pose_buf.push(pose_msg);
     m_buf.unlock();
@@ -191,7 +191,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 
 void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
-    //ROS_INFO("vio_callback!");
+    //printf("vio_callback!");
     Vector3d vio_t(pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, pose_msg->pose.pose.position.z);
     Quaterniond vio_q;
     vio_q.w() = pose_msg->pose.pose.orientation.w;

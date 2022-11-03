@@ -4,7 +4,8 @@
 #include <boost/shared_ptr.hpp>
 #include <opencv2/core/core.hpp>
 
-#include "camodocal/camera_models/Camera.h"
+//#include "camodocal/camera_models/Camera.h"
+#include "Camera.h" //上面的写法报错，得这么写才不报错
 
 namespace camodocal
 {
