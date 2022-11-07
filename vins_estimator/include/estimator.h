@@ -41,6 +41,7 @@ class Estimator
     Estimator();
     ~Estimator();
     void setParameter();
+    void createProcessthd();
 
     // interface
     void initFirstPose(Eigen::Vector3d p, Eigen::Matrix3d r);
@@ -172,4 +173,6 @@ class Estimator
 
     bool initFirstPoseFlag;
     bool initThreadFlag;
+    std::ofstream ofs_pose;
+    std::vector<Vector3d> vPath_to_draw;
 };
