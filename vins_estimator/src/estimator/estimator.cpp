@@ -11,7 +11,7 @@
 
 Estimator::Estimator(): f_manager{Rs}
 {
-    printf("init begins\n");
+    printf("init begins");
     initThreadFlag = false;
     clearState();
 }
@@ -23,7 +23,6 @@ Estimator::~Estimator()
         processThread.join();
         printf("join thread \n");
     }
-    ofs_pose.close();
 }
 
 void Estimator::clearState()
@@ -95,13 +94,6 @@ void Estimator::clearState()
 void Estimator::setParameter()
 {
     mProcess.lock();
-
-    ofs_pose.open(VINS_RESULT_PATH ,fstream::ate | fstream::out);
-    if(!ofs_pose.is_open())
-    {
-        cerr << "ofs_pose is not open" << endl;
-    }
-
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
         tic[i] = TIC[i];
@@ -121,13 +113,9 @@ void Estimator::setParameter()
     if (MULTIPLE_THREAD && !initThreadFlag)
     {
         initThreadFlag = true;
-//        processThread = std::thread(&Estimator::processMeasurements, this);
+        processThread = std::thread(&Estimator::processMeasurements, this);
     }
     mProcess.unlock();
-}
-
-void Estimator::createProcessthd(){
-    processThread = std::thread(&Estimator::processMeasurements, this);
 }
 
 void Estimator::changeSensorType(int use_imu, int use_stereo)
@@ -327,25 +315,8 @@ void Estimator::processMeasurements()
                 }
             }
             mProcess.lock();
-            TicToc t_processImage;
             processImage(feature.second, feature.first);
-
             prevTime = curTime;
-            if (solver_flag == Estimator::SolverFlag::NON_LINEAR) //只保存初始化后的，不保存初始化过程中的
-            {
-                Vector3d p_wi;
-                Quaterniond q_wi;
-                q_wi = Quaterniond(Rs[WINDOW_SIZE]);
-                p_wi = Ps[WINDOW_SIZE];
-                vPath_to_draw.push_back(p_wi);
-                double dStamp = Headers[WINDOW_SIZE];
-                cout << "1 BackEnd processImage dt: " << fixed << t_processImage.toc() << " stamp: " <<  dStamp << " p_wi: " << p_wi.transpose() << endl;
-                ofs_pose << dStamp << " " << p_wi(0) << " " << p_wi(1) << " "
-                         << p_wi(2) << " " << q_wi.w() << " " << q_wi.x() << " " <<  q_wi.y() << " " << q_wi.z() << endl;
-            }
-            else{
-
-            }
 
             mProcess.unlock();
         }
@@ -427,8 +398,8 @@ void Estimator::processIMU(double dt, const Vector3d &linear_acceleration, const
 
 void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, const double header)
 {
-    printf("new image coming ------------------------------------------\n");
-    printf("Adding feature points %lu \n", image.size());
+    printf("new image coming ------------------------------------------");
+    printf("Adding feature points %lu", image.size());
     if (f_manager.addFeatureCheckParallax(frame_count, image, td))
     {
         marginalization_flag = MARGIN_OLD;
@@ -440,9 +411,9 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         //printf("non-keyframe\n");
     }
 
-    printf("%s", marginalization_flag ? "Non-keyframe\n" : "Keyframe\n");
-    printf("Solving %d \n", frame_count);
-    printf("number of feature: %d \n", f_manager.getFeatureCount());
+    printf("%s", marginalization_flag ? "Non-keyframe" : "Keyframe");
+    printf("Solving %d", frame_count);
+    printf("number of feature: %d", f_manager.getFeatureCount());
     Headers[frame_count] = header;
 
     ImageFrame imageframe(image, header);
@@ -452,14 +423,14 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
 
     if(ESTIMATE_EXTRINSIC == 2)
     {
-        printf("calibrating extrinsic param, rotation movement is needed \n");
+        printf("calibrating extrinsic param, rotation movement is needed");
         if (frame_count != 0)
         {
             vector<pair<Vector3d, Vector3d>> corres = f_manager.getCorresponding(frame_count - 1, frame_count);
             Matrix3d calib_ric;
             if (initial_ex_rotation.CalibrationExRotation(corres, pre_integrations[frame_count]->delta_q, calib_ric))
             {
-                printf("initial extrinsic rotation calib success \n");
+                printf("initial extrinsic rotation calib success");
                 cout << "initial extrinsic rotation: \n" << calib_ric << endl;
                 ric[0] = calib_ric;
                 RIC[0] = calib_ric;
@@ -487,7 +458,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     updateLatestStates();
                     solver_flag = NON_LINEAR;
                     slideWindow();
-                    printf("Initialization finish! \n");
+                    printf("Initialization finish!");
                 }
                 else
                     slideWindow();
@@ -518,7 +489,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 updateLatestStates();
                 solver_flag = NON_LINEAR;
                 slideWindow();
-                printf("Initialization finish! \n");
+                printf("Initialization finish!");
             }
         }
 
@@ -535,7 +506,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 updateLatestStates();
                 solver_flag = NON_LINEAR;
                 slideWindow();
-                printf("Initialization finish! \n");
+                printf("Initialization finish!");
             }
         }
 
@@ -567,15 +538,15 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
             predictPtsInNextFrame();
         }
             
-        printf("solver costs: %fms \n", t_solve.toc());
+        printf("solver costs: %fms", t_solve.toc());
 
         if (failureDetection())
         {
-            printf("failure detection! \n");
+            printf("failure detection!");
             failure_occur = 1;
             clearState();
             setParameter();
-            printf("system reboot! \n");
+            printf("system reboot!");
             return;
         }
 
@@ -621,7 +592,7 @@ bool Estimator::initialStructure()
         //printf("IMU variation %f!", var);
         if(var < 0.25)
         {
-            printf("IMU excitation not enouth!\n");
+            printf("IMU excitation not enouth!");
             //return false;
         }
     }
@@ -649,7 +620,7 @@ bool Estimator::initialStructure()
     int l;
     if (!relativePose(relative_R, relative_T, l))
     {
-        printf("Not enough features or parallax; Move device around\n");
+        printf("Not enough features or parallax; Move device around");
         return false;
     }
     GlobalSFM sfm;
@@ -657,7 +628,7 @@ bool Estimator::initialStructure()
               relative_R, relative_T,
               sfm_f, sfm_tracked_points))
     {
-        printf("global SFM failed!\n");
+        printf("global SFM failed!");
         marginalization_flag = MARGIN_OLD;
         return false;
     }
@@ -712,12 +683,12 @@ bool Estimator::initialStructure()
         if(pts_3_vector.size() < 6)
         {
             cout << "pts_3_vector size " << pts_3_vector.size() << endl;
-            printf("Not enough points for solve pnp !\n");
+            printf("Not enough points for solve pnp !");
             return false;
         }
         if (! cv::solvePnP(pts_3_vector, pts_2_vector, K, D, rvec, t, 1))
         {
-            printf("solve pnp fail!\n");
+            printf("solve pnp fail!");
             return false;
         }
         cv::Rodrigues(rvec, r);
@@ -734,7 +705,7 @@ bool Estimator::initialStructure()
         return true;
     else
     {
-        printf("misalign visual structure with IMU\n");
+        printf("misalign visual structure with IMU");
         return false;
     }
 
@@ -748,7 +719,7 @@ bool Estimator::visualInitialAlign()
     bool result = VisualIMUAlignment(all_image_frame, Bgs, g, x);
     if(!result)
     {
-        printf("solve g failed!\n");
+        printf("solve g failed!");
         return false;
     }
 
@@ -824,7 +795,7 @@ bool Estimator::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
             if(average_parallax * 460 > 30 && m_estimator.solveRelativeRT(corres, relative_R, relative_T))
             {
                 l = i;
-                printf("average_parallax %f choose l %d and newest frame to triangulate the whole structure\n", average_parallax * 460, l);
+                printf("average_parallax %f choose l %d and newest frame to triangulate the whole structure", average_parallax * 460, l);
                 return true;
             }
         }
@@ -904,7 +875,7 @@ void Estimator::double2vector()
         Matrix3d rot_diff = Utility::ypr2R(Vector3d(y_diff, 0, 0));
         if (abs(abs(origin_R0.y()) - 90) < 1.0 || abs(abs(origin_R00.y()) - 90) < 1.0)
         {
-            printf("euler singular point!\n");
+            printf("euler singular point!");
             rot_diff = Rs[0] * Quaterniond(para_Pose[0][6],
                                            para_Pose[0][3],
                                            para_Pose[0][4],
@@ -974,17 +945,17 @@ bool Estimator::failureDetection()
     return false;
     if (f_manager.last_track_num < 2)
     {
-        printf(" little feature %d\n", f_manager.last_track_num);
+        printf(" little feature %d", f_manager.last_track_num);
         //return true;
     }
     if (Bas[WINDOW_SIZE].norm() > 2.5)
     {
-        printf(" big IMU acc bias estimation %f\n", Bas[WINDOW_SIZE].norm());
+        printf(" big IMU acc bias estimation %f", Bas[WINDOW_SIZE].norm());
         return true;
     }
     if (Bgs[WINDOW_SIZE].norm() > 1.0)
     {
-        printf(" big IMU gyr bias estimation %f\n", Bgs[WINDOW_SIZE].norm());
+        printf(" big IMU gyr bias estimation %f", Bgs[WINDOW_SIZE].norm());
         return true;
     }
     /*
@@ -1012,7 +983,7 @@ bool Estimator::failureDetection()
     delta_angle = acos(delta_Q.w()) * 2.0 / 3.14 * 180.0;
     if (delta_angle > 50)
     {
-        printf(" big delta_angle \n");
+        printf(" big delta_angle ");
         //return true;
     }
     return false;
@@ -1124,7 +1095,7 @@ void Estimator::optimization()
         }
     }
 
-    printf("visual measurement count: %d\n", f_m_cnt);
+    printf("visual measurement count: %d", f_m_cnt);
     //printf("prepare for ceres: %f \n", t_prepare.toc());
 
     ceres::Solver::Options options;
@@ -1144,7 +1115,7 @@ void Estimator::optimization()
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     //cout << summary.BriefReport() << endl;
-    printf("Iterations : %d\n", static_cast<int>(summary.iterations.size()));
+    printf("Iterations : %d", static_cast<int>(summary.iterations.size()));
     //printf("solver costs: %f \n", t_solver.toc());
 
     double2vector();
@@ -1245,11 +1216,11 @@ void Estimator::optimization()
 
         TicToc t_pre_margin;
         marginalization_info->preMarginalize();
-        printf("pre marginalization %f ms\n", t_pre_margin.toc());
+        printf("pre marginalization %f ms", t_pre_margin.toc());
         
         TicToc t_margin;
         marginalization_info->marginalize();
-        printf("marginalization %f ms\n", t_margin.toc());
+        printf("marginalization %f ms", t_margin.toc());
 
         std::unordered_map<long, double *> addr_shift;
         for (int i = 1; i <= WINDOW_SIZE; i++)
@@ -1298,14 +1269,14 @@ void Estimator::optimization()
             }
 
             TicToc t_pre_margin;
-            printf("begin marginalization\n");
+            printf("begin marginalization");
             marginalization_info->preMarginalize();
-            printf("end pre marginalization, %f ms\n", t_pre_margin.toc());
+            printf("end pre marginalization, %f ms", t_pre_margin.toc());
 
             TicToc t_margin;
-            printf("begin marginalization\n");
+            printf("begin marginalization");
             marginalization_info->marginalize();
-            printf("end marginalization, %f ms\n", t_margin.toc());
+            printf("end marginalization, %f ms", t_margin.toc());
             
             std::unordered_map<long, double *> addr_shift;
             for (int i = 0; i <= WINDOW_SIZE; i++)

@@ -69,7 +69,7 @@ void readParameters(std::string config_file)
 {
     FILE *fh = fopen(config_file.c_str(),"r");
     if(fh == NULL){
-        printf("config_file dosen't exist; wrong config_file path\n");
+        printf("config_file dosen't exist; wrong config_file path");
 //        break;
         return;          
     }
@@ -112,13 +112,13 @@ void readParameters(std::string config_file)
     fsSettings["output_path"] >> OUTPUT_FOLDER;
     VINS_RESULT_PATH = OUTPUT_FOLDER + "/vio.txt";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
-//    std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
-//    fout.close();
+    std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
+    fout.close();
 
     ESTIMATE_EXTRINSIC = fsSettings["estimate_extrinsic"];
     if (ESTIMATE_EXTRINSIC == 2)
     {
-        printf("have no prior about extrinsic param, calibrate extrinsic param\n");
+        printf("have no prior about extrinsic param, calibrate extrinsic param");
         RIC.push_back(Eigen::Matrix3d::Identity());
         TIC.push_back(Eigen::Vector3d::Zero());
         EX_CALIB_RESULT_PATH = OUTPUT_FOLDER + "/extrinsic_parameter.csv";
@@ -127,11 +127,11 @@ void readParameters(std::string config_file)
     {
         if ( ESTIMATE_EXTRINSIC == 1)
         {
-            printf(" Optimize extrinsic param around initial guess!\n");
+            printf(" Optimize extrinsic param around initial guess!");
             EX_CALIB_RESULT_PATH = OUTPUT_FOLDER + "/extrinsic_parameter.csv";
         }
         if (ESTIMATE_EXTRINSIC == 0)
-            printf(" fix extrinsic param \n");
+            printf(" fix extrinsic param ");
 
         cv::Mat cv_T;
         fsSettings["body_T_cam0"] >> cv_T;
@@ -183,13 +183,13 @@ void readParameters(std::string config_file)
     TD = fsSettings["td"];
     ESTIMATE_TD = fsSettings["estimate_td"];
     if (ESTIMATE_TD)
-        printf("Unsynchronized sensors, online estimate time offset, initial td: %d \n", TD);
+        printf("Unsynchronized sensors, online estimate time offset, initial td: %d", TD);
     else
-        printf("Synchronized sensors, fix time offset: %d\n", TD);
+        printf("Synchronized sensors, fix time offset: %d", TD);
 
     ROW = fsSettings["image_height"];
     COL = fsSettings["image_width"];
-    printf("ROW: %d COL: %d \n", ROW, COL);
+    printf("ROW: %d COL: %d ", ROW, COL);
 
     if(!USE_IMU)
     {
