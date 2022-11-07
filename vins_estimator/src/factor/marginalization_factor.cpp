@@ -263,7 +263,7 @@ void MarginalizationInfo::marginalize()
         int ret = pthread_create( &tids[i], NULL, ThreadsConstructA ,(void*)&(threadsstruct[i]));
         if (ret != 0)
         {
-            printf("pthread_create error");
+            printf("pthread_create error\n");
             break;
         }
     }
