@@ -39,6 +39,7 @@ int FeatureManager::getFeatureCount()
     int cnt = 0;
     for (auto &it : feature)
     {
+        // TODO: cnt不对，正常的vins每次求解H矩阵只有num of feature: 50多个
         it.used_num = it.feature_per_frame.size();
         if (it.used_num >= 4)
         {
@@ -263,7 +264,7 @@ void FeatureManager::initFramePoseByPnP(int frameCnt, Vector3d Ps[], Matrix3d Rs
     {
         vector<cv::Point2f> pts2D;
         vector<cv::Point3f> pts3D;
-        for (auto &it_per_id : feature)
+        for (auto &it_per_id : feature)//根据所有路标点在第一帧中的逆深度以及观测，恢复出在世界坐标系下的位姿
         {
             if (it_per_id.estimated_depth > 0)
             {
@@ -282,7 +283,7 @@ void FeatureManager::initFramePoseByPnP(int frameCnt, Vector3d Ps[], Matrix3d Rs
         }
         Eigen::Matrix3d RCam;
         Eigen::Vector3d PCam;
-        // trans to w_T_cam
+        // trans to w_T_cam 用上一帧位姿作为当前帧位姿的初值，输入solvePoseByPnP中
         RCam = Rs[frameCnt - 1] * ric[0];
         PCam = Rs[frameCnt - 1] * tic[0] + Ps[frameCnt - 1];
 
@@ -303,20 +304,20 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
 {
     for (auto &it_per_id : feature)
     {
-        if (it_per_id.estimated_depth > 0)
+        if (it_per_id.estimated_depth > 0)//如果已经估计过深度，则跳过（避免重复估计）
             continue;
 
-        if(STEREO && it_per_id.feature_per_frame[0].is_stereo)
+        if(STEREO && it_per_id.feature_per_frame[0].is_stereo)//双目模式，且该路标点在左右目都能被提取到
         {
             int imu_i = it_per_id.start_frame;
-            Eigen::Matrix<double, 3, 4> leftPose;
+            Eigen::Matrix<double, 3, 4> leftPose;//左目在世界坐标系下的位姿
             Eigen::Vector3d t0 = Ps[imu_i] + Rs[imu_i] * tic[0];
             Eigen::Matrix3d R0 = Rs[imu_i] * ric[0];
             leftPose.leftCols<3>() = R0.transpose();
             leftPose.rightCols<1>() = -R0.transpose() * t0;
             //cout << "left pose " << leftPose << endl;
 
-            Eigen::Matrix<double, 3, 4> rightPose;
+            Eigen::Matrix<double, 3, 4> rightPose;//右目在世界坐标系下的位姿
             Eigen::Vector3d t1 = Ps[imu_i] + Rs[imu_i] * tic[1];
             Eigen::Matrix3d R1 = Rs[imu_i] * ric[1];
             rightPose.leftCols<3>() = R1.transpose();
@@ -325,19 +326,19 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
 
             Eigen::Vector2d point0, point1;
             Eigen::Vector3d point3d;
-            point0 = it_per_id.feature_per_frame[0].point.head(2);
-            point1 = it_per_id.feature_per_frame[0].pointRight.head(2);
+            point0 = it_per_id.feature_per_frame[0].point.head(2);//在左目的观测
+            point1 = it_per_id.feature_per_frame[0].pointRight.head(2);//在右目的观测
             //cout << "point0 " << point0.transpose() << endl;
             //cout << "point1 " << point1.transpose() << endl;
 
-            triangulatePoint(leftPose, rightPose, point0, point1, point3d);
+            triangulatePoint(leftPose, rightPose, point0, point1, point3d);//通过左右目观测进行三角化
             Eigen::Vector3d localPoint;
             localPoint = leftPose.leftCols<3>() * point3d + leftPose.rightCols<1>();
             double depth = localPoint.z();
             if (depth > 0)
                 it_per_id.estimated_depth = depth;
             else
-                it_per_id.estimated_depth = INIT_DEPTH;
+                it_per_id.estimated_depth = INIT_DEPTH;//初始深度为5
             /*
             Vector3d ptsGt = pts_gt[it_per_id.feature_id];
             printf("stereo %d pts: %f %f %f gt: %f %f %f \n",it_per_id.feature_id, point3d.x(), point3d.y(), point3d.z(),
@@ -354,7 +355,7 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
             leftPose.leftCols<3>() = R0.transpose();
             leftPose.rightCols<1>() = -R0.transpose() * t0;
 
-            imu_i++;
+            imu_i++;//通过最初观测到的第一帧和第二帧三角化路标点
             Eigen::Matrix<double, 3, 4> rightPose;
             Eigen::Vector3d t1 = Ps[imu_i] + Rs[imu_i] * tic[0];
             Eigen::Matrix3d R1 = Rs[imu_i] * ric[0];
@@ -381,7 +382,7 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
             continue;
         }
         it_per_id.used_num = it_per_id.feature_per_frame.size();
-        if (it_per_id.used_num < 4)
+        if (it_per_id.used_num < 4)//观测帧数大于4帧的情况下，使用SVD方法进行三角化
             continue;
 
         int imu_i = it_per_id.start_frame, imu_j = imu_i - 1;
@@ -390,12 +391,12 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
         int svd_idx = 0;
 
         Eigen::Matrix<double, 3, 4> P0;
-        Eigen::Vector3d t0 = Ps[imu_i] + Rs[imu_i] * tic[0];
+        Eigen::Vector3d t0 = Ps[imu_i] + Rs[imu_i] * tic[0];//观测到该特征点第一帧的位姿
         Eigen::Matrix3d R0 = Rs[imu_i] * ric[0];
         P0.leftCols<3>() = Eigen::Matrix3d::Identity();
         P0.rightCols<1>() = Eigen::Vector3d::Zero();
 
-        for (auto &it_per_frame : it_per_id.feature_per_frame)
+        for (auto &it_per_frame : it_per_id.feature_per_frame)//构造svd_A矩阵
         {
             imu_j++;
 

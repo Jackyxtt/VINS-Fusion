@@ -36,7 +36,7 @@ void Estimator::clearState()
     while(!featureBuf.empty())
         featureBuf.pop();
 
-    prevTime = -1;
+    prevTime = -1; //首次运算dt时，减的是-1，为什么不是减0
     curTime = 0;
     openExEstimation = 0;
     initP = Eigen::Vector3d(0, 0, 0);
@@ -404,9 +404,9 @@ void Estimator::processIMU(double dt, const Vector3d &linear_acceleration, const
     }
     if (frame_count != 0)
     {
-        pre_integrations[frame_count]->push_back(dt, linear_acceleration, angular_velocity);
+        pre_integrations[frame_count]->push_back(dt, linear_acceleration, angular_velocity);//和下面的tmp_pre_integration一样
         //if(solver_flag != NON_LINEAR)
-            tmp_pre_integration->push_back(dt, linear_acceleration, angular_velocity);
+            tmp_pre_integration->push_back(dt, linear_acceleration, angular_velocity);//从processImage接收到新的一帧图像开始，接受每一帧IMU测量
 
         dt_buf[frame_count].push_back(dt);
         linear_acceleration_buf[frame_count].push_back(linear_acceleration);
@@ -446,7 +446,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     Headers[frame_count] = header;
 
     ImageFrame imageframe(image, header);
-    imageframe.pre_integration = tmp_pre_integration;
+    imageframe.pre_integration = tmp_pre_integration;//上一帧到当前帧的预积分
     all_image_frame.insert(make_pair(header, imageframe));
     tmp_pre_integration = new IntegrationBase{acc_0, gyr_0, Bas[frame_count], Bgs[frame_count]};
 
@@ -497,8 +497,8 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         // stereo + IMU initilization
         if(STEREO && USE_IMU)
         {
-            f_manager.initFramePoseByPnP(frame_count, Ps, Rs, tic, ric);
-            f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
+            f_manager.initFramePoseByPnP(frame_count, Ps, Rs, tic, ric);//通过pnp算法求解当前帧的位姿
+            f_manager.triangulate(frame_count, Ps, Rs, tic, ric);//
             if (frame_count == WINDOW_SIZE)
             {
                 map<double, ImageFrame>::iterator frame_it;
@@ -1143,7 +1143,7 @@ void Estimator::optimization()
     TicToc t_solver;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    //cout << summary.BriefReport() << endl;
+    cout << summary.BriefReport() << endl;
     printf("Iterations : %d\n", static_cast<int>(summary.iterations.size()));
     //printf("solver costs: %f \n", t_solver.toc());
 

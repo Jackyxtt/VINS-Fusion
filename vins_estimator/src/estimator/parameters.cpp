@@ -183,9 +183,9 @@ void readParameters(std::string config_file)
     TD = fsSettings["td"];
     ESTIMATE_TD = fsSettings["estimate_td"];
     if (ESTIMATE_TD)
-        printf("Unsynchronized sensors, online estimate time offset, initial td: %d \n", TD);
+        cout <<"Unsynchronized sensors, online estimate time offset, initial td: " << TD << endl;
     else
-        printf("Synchronized sensors, fix time offset: %d\n", TD);
+        cout << "Synchronized sensors, fix time offset: " << TD << endl;
 
     ROW = fsSettings["image_height"];
     COL = fsSettings["image_width"];
