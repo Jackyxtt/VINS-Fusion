@@ -20,3 +20,4 @@ bin/
 cmake-build-debug/
 /.idea
 vins_estimator/.idea
+debug/

@@ -224,7 +224,7 @@ void Estimator::inputIMU(double t, const Vector3d &linearAcceleration, const Vec
         mPropagate.unlock();
     }
 }
-
+// 原来的代码中该函数也未使用
 void Estimator::inputFeature(double t, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &featureFrame)
 {
     mBuf.lock();
@@ -567,7 +567,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
             predictPtsInNextFrame();
         }
             
-        printf("solver costs: %fms \n", t_solve.toc());
+        printf("solver(optimization, outliersRejection) costs: %fms \n", t_solve.toc());
 
         if (failureDetection())
         {
@@ -1021,6 +1021,7 @@ bool Estimator::failureDetection()
 void Estimator::optimization()
 {
     TicToc t_whole, t_prepare;
+    opt_time++;
     vector2double();
 
     ceres::Problem problem;
@@ -1068,6 +1069,9 @@ void Estimator::optimization()
     }
     if(USE_IMU)
     {
+        ofstream debugIMU;
+        string debugFilename = "/media/yxt/storage/SLAM_demo/VINS-Fusion/debug/debugIMU/debugIMU" + to_string(opt_time) + ".txt";
+        debugIMU.open(debugFilename, ios::out);
         for (int i = 0; i < frame_count; i++)
         {
             int j = i + 1;
@@ -1075,24 +1079,56 @@ void Estimator::optimization()
                 continue;
             IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
             problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
+
+            debugIMU << "imu_factor" << endl;
+
+            debugIMU << "para_Pose" << i << " " << endl;
+            for (int k = 0; k < SIZE_POSE; k++){
+                debugIMU << para_Pose[i][k] << " ";
+            }
+            debugIMU << endl;
+
+            debugIMU << "para_SpeedBias" << i << " " << endl;
+            for (int k = 0; k < SIZE_SPEEDBIAS; k++){
+                debugIMU << para_SpeedBias[i][k] << " ";
+            }
+            debugIMU << endl;
+
+            debugIMU << "para_Pose" << j << " " << endl;
+            for (int k = 0; k < SIZE_POSE; k++){
+                debugIMU << para_Pose[j][k] << " ";
+            }
+            debugIMU << endl;
+
+            debugIMU << "para_SpeedBias" << j << " " << endl;
+            for (int k = 0; k < SIZE_SPEEDBIAS; k++){
+                debugIMU << para_SpeedBias[j][k] << " ";
+            }
+            debugIMU << endl;
         }
+        debugIMU.close();
     }
 
     int f_m_cnt = 0;
     int feature_index = -1;
-    for (auto &it_per_id : f_manager.feature)
+    ofstream debugFeature;
+    string debugFilename = "/media/yxt/storage/SLAM_demo/VINS-Fusion/debug/debugFeature/debugFeature" + to_string(opt_time) + ".txt";
+    debugFeature.open(debugFilename, ios::out);
+    for (auto &it_per_id : f_manager.feature)//遍历每个点
     {
         it_per_id.used_num = it_per_id.feature_per_frame.size();
+
         if (it_per_id.used_num < 4)
             continue;
  
         ++feature_index;
-
+        debugFeature << "feature index = " << feature_index << endl;
+        debugFeature << "it_per_id.used_num = " << it_per_id.used_num << endl;
         int imu_i = it_per_id.start_frame, imu_j = imu_i - 1;
-        
+
         Vector3d pts_i = it_per_id.feature_per_frame[0].point;
 
-        for (auto &it_per_frame : it_per_id.feature_per_frame)
+        for (auto &it_per_frame : it_per_id.feature_per_frame)//遍历每个点出现的帧
         {
             imu_j++;
             if (imu_i != imu_j)
@@ -1101,6 +1137,29 @@ void Estimator::optimization()
                 ProjectionTwoFrameOneCamFactor *f_td = new ProjectionTwoFrameOneCamFactor(pts_i, pts_j, it_per_id.feature_per_frame[0].velocity, it_per_frame.velocity,
                                                                  it_per_id.feature_per_frame[0].cur_td, it_per_frame.cur_td);
                 problem.AddResidualBlock(f_td, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index], para_Td[0]);
+
+                debugFeature << "para_Pose" << imu_i << endl;
+
+                for (int k = 0; k < SIZE_POSE; k++)
+                {
+                     debugFeature << para_Pose[imu_i][k] << " ";
+                }
+                debugFeature << endl;
+
+                debugFeature << "para_Pose" << imu_j << endl;
+                for (int k = 0; k < SIZE_POSE; k++)
+                {
+                    debugFeature << para_Pose[imu_j][k] << " ";
+                }
+                debugFeature << endl;
+
+                debugFeature << "para_Feature" << feature_index << endl;
+                for (int k = 0; k < SIZE_FEATURE; k++)
+                {
+                    debugFeature << para_Feature[feature_index] << " ";
+                }
+                debugFeature << endl;
+
             }
 
             if(STEREO && it_per_frame.is_stereo)
@@ -1123,6 +1182,7 @@ void Estimator::optimization()
             f_m_cnt++;
         }
     }
+    debugFeature.close();
 
     printf("visual measurement count: %d\n", f_m_cnt);
     //printf("prepare for ceres: %f \n", t_prepare.toc());
@@ -1145,7 +1205,7 @@ void Estimator::optimization()
     ceres::Solve(options, &problem, &summary);
     cout << summary.BriefReport() << endl;
     printf("Iterations : %d\n", static_cast<int>(summary.iterations.size()));
-    //printf("solver costs: %f \n", t_solver.toc());
+    printf("ceres solver costs: %f \n", t_solver.toc());
 
     double2vector();
     //printf("frame_count: %d \n", frame_count);

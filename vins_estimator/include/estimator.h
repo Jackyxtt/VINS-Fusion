@@ -175,4 +175,5 @@ class Estimator
     bool initThreadFlag;
     std::ofstream ofs_pose;
     std::vector<Vector3d> vPath_to_draw;
+    int opt_time = 0;
 };

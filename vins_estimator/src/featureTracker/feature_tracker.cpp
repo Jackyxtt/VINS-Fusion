@@ -186,6 +186,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         printf("set mask costs %fms \n", t_m.toc());
 
         printf("detect feature begins \n");
+        cout << "current points number is " << cur_pts.size() << endl;
         TicToc t_t;
         int n_max_cnt = MAX_CNT - static_cast<int>(cur_pts.size());
         if (n_max_cnt > 0)
@@ -271,6 +272,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         prevLeftPtsMap[ids[i]] = cur_pts[i];
     // 先把左目的特征点加入featureFrame中
     map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> featureFrame;
+    cout << "left feature number is " << ids.size() << endl;
     for (size_t i = 0; i < ids.size(); i++)
     {
         int feature_id = ids[i];
@@ -293,6 +295,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
     // 再把右目特征点加入featureFrame中
     if (!_img1.empty() && stereo_cam)
     {
+        cout << "right feature number is " << ids_right.size() << endl;
         for (size_t i = 0; i < ids_right.size(); i++)
         {
             int feature_id = ids_right[i];

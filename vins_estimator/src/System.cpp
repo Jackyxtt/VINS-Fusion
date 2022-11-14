@@ -77,11 +77,11 @@ void System::PubImuData(double dStampSec, const Eigen::Vector3d &vGyr,
     // cout << "1 PubImuData t: " << fixed << imu_msg->header
     //     << " acc: " << imu_msg->linear_acceleration.transpose()
     //     << " gyr: " << imu_msg->angular_velocity.transpose() << endl;
-//    m_buf.lock();
+    m_buf.lock();
     imu_buf.push(imu_msg);
     // cout << "1 PubImuData t: " << fixed << imu_msg->header 
     //     << " imu_buf size:" << imu_buf.size() << endl;
-//    m_buf.unlock();
+    m_buf.unlock();
 //    con.notify_one();
 }
 
@@ -104,7 +104,7 @@ void System::sync_process()
             cv::Mat image0, image1;
 //            std_msgs::Header header;
             double time = 0;
-//            m_buf.lock();
+            m_buf.lock();
             if (!img0_buf.empty() && !img1_buf.empty())
             {
                 double time0 = img0_buf.front().first;
@@ -130,7 +130,7 @@ void System::sync_process()
                     //printf("find img0 and img1\n");
                 }
             }
-//            m_buf.unlock();
+            m_buf.unlock();
             if(!image0.empty())
                 estimator.inputImage(time, image0, image1);
         }
@@ -139,7 +139,7 @@ void System::sync_process()
             cv::Mat image;
 //            std_msgs::Header header;
             double time = 0;
-//            m_buf.lock();
+            m_buf.lock();
             if(!img0_buf.empty())
             {
                 time = img0_buf.front().first;
@@ -147,7 +147,7 @@ void System::sync_process()
                 image = img0_buf.front().second;
                 img0_buf.pop();
             }
-//            m_buf.unlock();
+            m_buf.unlock();
             if(!image.empty())
                 estimator.inputImage(time, image);
         }

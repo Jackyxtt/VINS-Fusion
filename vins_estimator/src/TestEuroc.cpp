@@ -126,8 +126,13 @@ int main(int argc, char **argv)
 
     PubImuData();
     PubImageData();
-    pSystem->pubIMUtoEstimator();
-    pSystem->sync_process();
+//    pSystem->pubIMUtoEstimator();
+//    pSystem->sync_process();
+//    std::thread thd_PubImuData(&PubImuData);
+//    std::thread thd_PubImageData(&PubImageData);
+    std::thread thd_pubIMUtoEstimator(&System::pubIMUtoEstimator, pSystem);
+    std::thread thd_sync_process(&System::sync_process, pSystem);
+
 #ifdef EIGEN_DONT_PARALLELIZE
     printf("EIGEN_DONT_PARALLELIZE\n");
 #endif

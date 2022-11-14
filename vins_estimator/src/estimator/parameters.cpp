@@ -21,7 +21,7 @@ Eigen::Vector3d G{0.0, 0.0, 9.8};
 
 int FLOW_BACK;
 std::string IMAGE_TOPIC;
-int FOCAL_LENGTH;
+int FOCAL_LENGTH = 460;
 double BIAS_ACC_THRESHOLD;
 double BIAS_GYR_THRESHOLD;
 double SOLVER_TIME;
